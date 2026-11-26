@@ -34,12 +34,28 @@ function showLogin(msg,mode){mode=mode||"in";
   g.querySelector("#nxGo").onclick=async()=>{const e=g.querySelector("#nxE").value.trim(),p=g.querySelector("#nxP").value;if(!e||!p)return M("اكتب الإيميل وكلمة المرور");M("…");
     if(mode==="up"){const n=(g.querySelector("#nxN").value||"").trim();const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{name:n},emailRedirectTo:location.origin+location.pathname}});
       if(error)return M(error.message);if(!data.session){g.querySelector("#nxM").className="m ok";return M("اتبعت رسالة تأكيد على إيميلك — افتحها وبعدين ادخل")}}
-    else{const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error)return M(/Invalid/i.test(error.message)?"الإيميل أو كلمة المرور غلط":/confirm/i.test(error.message)?"لازم تأكد إيميلك الأول من الرسالة اللي وصلتك":error.message)}};
+    else{sessionStorage.setItem("nxPw","1");const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error)return M(/Invalid/i.test(error.message)?"الإيميل أو كلمة المرور غلط":/confirm/i.test(error.message)?"لازم تأكد إيميلك الأول من الرسالة اللي وصلتك":error.message)}};
   g.querySelectorAll("input").forEach(i=>i.addEventListener("keydown",ev=>{if(ev.key==="Enter")g.querySelector("#nxGo").click()}))}
 function showPending(){gate(`<h2>NHCI Tower</h2><p>حسابك (${esc(ME.email)}) مستني موافقة مدير المنصة.</p><p>أول ما يوافق، افتح البرنامج تاني.</p><button id="nxR">تحديث</button><button class="l" id="nxO">تسجيل خروج</button>`);
   document.getElementById("nxR").onclick=()=>location.reload();document.getElementById("nxO").onclick=async()=>{await sb.auth.signOut();location.reload()}}
 async function afterAuth(session){ME=session.user;const {data}=await sb.from("members").select("*").eq("user_id",ME.id).maybeSingle();MEM=data;ROLE=(data&&data.role)||"pending";
-  if(!["view","interact","admin"].includes(ROLE)){showPending();return}gateClose();await loadPeople();readyRes(true)}
+  if(!["view","interact","admin"].includes(ROLE)){showPending();return}if(bioOn()&&!sessionStorage.getItem("nxPw")&&!sessionStorage.getItem("nxBioOk")){if(!(await bioLock()))return}gateClose();await loadPeople();readyRes(true);if(sessionStorage.getItem("nxPw"))setTimeout(bioOffer,4000)}
+const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const ub64=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((s.length+3)%4)),c=>c.charCodeAt(0));
+const bioOn=()=>{try{const v=JSON.parse(localStorage.getItem("nxBio")||"null");return v&&ME&&v.u===ME.id?v:null}catch(e){return null}};
+function bioLock(){return new Promise(res=>{const g=gate(`<h2>NHCI Tower</h2><p>افتح المنصة بالبصمة أو الوجه أو نمط القفل</p><button id="nxBo" style="font-size:20px">🔓 فتح المنصة</button><button class="l" id="nxBp">الدخول بكلمة المرور بدلًا من ذلك</button><div class="m" id="nxM"></div>`);
+  const go=async()=>{const v=bioOn();try{await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:ub64(v.id)}],userVerification:"required",timeout:60000}});sessionStorage.setItem("nxBioOk","1");res(true)}
+    catch(e){g.querySelector("#nxM").textContent=/NotAllowed/.test(e&&e.name)?"اتلغى التحقق — جرّب تاني":"تعذّر التحقق: "+(e&&e.message||e)}};
+  g.querySelector("#nxBo").onclick=go;g.querySelector("#nxBp").onclick=async()=>{localStorage.removeItem("nxBio");await sb.auth.signOut();location.reload()}})}
+async function bioOffer(){try{if(!window.PublicKeyCredential||bioOn()||localStorage.getItem("nxBioNo")===(ME&&ME.id))return;if(!(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()))return;
+  const g=gate(`<h2>🔐 دخول أسرع</h2><p>تحب تفتح المنصة بعد كده على الجهاز ده بالبصمة أو الوجه أو نمط القفل بدل كلمة المرور؟</p><button id="nxBy">تفعيل</button><button class="l" id="nxBn">مش دلوقتي</button><div class="m" id="nxM"></div>`);
+  g.querySelector("#nxBn").onclick=()=>{localStorage.setItem("nxBioNo",ME.id);gateClose()};
+  g.querySelector("#nxBy").onclick=async()=>{try{const c=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:"NHCI Tower"},user:{id:new TextEncoder().encode(ME.id),name:ME.email||"user",displayName:(MEM&&MEM.name)||ME.email||"user"},
+      pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"preferred"},timeout:60000,attestation:"none"}});
+    localStorage.setItem("nxBio",JSON.stringify({u:ME.id,id:b64u(c.rawId)}));sessionStorage.setItem("nxBioOk","1");const m=g.querySelector("#nxM");m.className="m ok";m.textContent="✅ اتفعّل — المرة الجاية افتح بالبصمة أو الوجه";setTimeout(gateClose,1800)}
+   catch(e){g.querySelector("#nxM").textContent=/NotAllowed/.test(e&&e.name)?"اتلغى":"تعذّر التفعيل: "+(e&&e.message||e)}}}catch(e){}}
+window.nhciBio={enable:()=>{localStorage.removeItem("nxBioNo");return bioOffer()},disable:()=>{localStorage.removeItem("nxBio");alert("اتلغى الدخول بالبصمة على الجهاز ده")},on:()=>!!bioOn()};
+
 async function boot(){try{await loadLib()}catch(e){gate(`<h2>NHCI Tower</h2><p>مفيش اتصال بالإنترنت.</p><button onclick="location.reload()">إعادة المحاولة</button>`);return}
   sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   let done=false;sb.auth.onAuthStateChange((ev,session)=>{if(ev==="PASSWORD_RECOVERY"){const g=gate(`<h2>كلمة مرور جديدة</h2><input id="nxP" type="password" placeholder="new password"><button id="nxGo">حفظ</button><div class="m" id="nxM"></div>`);g.querySelector("#nxGo").onclick=async()=>{const {error}=await sb.auth.updateUser({password:g.querySelector("#nxP").value});if(error)g.querySelector("#nxM").textContent=error.message;else location.reload()};return}
