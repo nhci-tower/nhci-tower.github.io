@@ -1,0 +1,11 @@
+[build]
+  publish = "."
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "same-origin"
+[[headers]]
+  for = "/app.enc"
+  [headers.values]
+    Cache-Control = "no-cache"

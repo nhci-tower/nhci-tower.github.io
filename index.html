@@ -1,0 +1,180 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>NHCI Tower</title>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#2b6ca2">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="NHCI Tower">
+<link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<style>html,body{margin:0;height:100%;background:linear-gradient(135deg,#0b4332,#14a3a0)}#nxLd{position:fixed;inset:0;display:grid;place-items:center;color:#fff;font:22px 'Sakkal Majalla',Tahoma,sans-serif}#nxLd img{width:96px;height:96px;border-radius:22px;display:block;margin:0 auto 14px;box-shadow:0 10px 30px #0004}</style>
+<script>/* NHCI Tower standalone runtime: replaces window.claude.use(...) with Supabase + browser APIs */
+(function(){
+const SB_URL="https://abxwjwsuqtniykfijqsx.supabase.co",SB_KEY="sb_publishable_llGdeAAhRyp8NmxY_4oSmA_gHBuIvND";
+const AR=document.documentElement.lang!=="en";
+let sb=null,ME=null,ROLE="none",MEM=null,READY,readyRes;READY=new Promise(r=>readyRes=r);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const err=(code,message)=>Object.assign(new Error(message||code),{code});
+const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
+function loadLib(){return new Promise((res,rej)=>{if(window.supabase)return res();const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js";s.onload=res;s.onerror=()=>rej(new Error("lib"));document.head.appendChild(s)})}
+
+/* ---------- login gate ---------- */
+const CSS=`#nxAuth{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:linear-gradient(135deg,#0b4332,#14a3a0);font-family:'Sakkal Majalla','Segoe UI',Tahoma,sans-serif}
+#nxAuth .bx{background:#fff;border-radius:18px;padding:28px 26px;width:min(380px,92vw);box-shadow:0 20px 60px #0005;direction:rtl;text-align:right}
+#nxAuth h2{margin:0 0 4px;font-size:26px;color:#0b4332}#nxAuth p{margin:0 0 14px;color:#555;font-size:16px}
+#nxAuth input{width:100%;box-sizing:border-box;padding:11px 12px;margin:5px 0;border:1px solid #ccd;border-radius:10px;font-size:16px;direction:ltr;text-align:left}
+#nxAuth button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;background:#14a3a0;color:#fff;font-size:18px;font-weight:700;cursor:pointer}
+#nxAuth button.l{background:none;color:#0b4332;font-weight:400;font-size:15px;padding:6px}#nxAuth .m{min-height:20px;color:#c62828;font-size:15px;margin-top:6px}#nxAuth .ok{color:#0a7d3c}`;
+function gate(html){let g=document.getElementById("nxAuth");if(!g){const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);g=document.createElement("div");g.id="nxAuth";document.body.appendChild(g)}g.innerHTML=`<div class="bx">${html}</div>`;return g}
+function gateClose(){const g=document.getElementById("nxAuth");if(g)g.remove()}
+function showLogin(msg,mode){mode=mode||"in";
+  const g=gate(`<h2>NHCI Tower</h2><p>${mode==="up"?"إنشاء حساب للفريق":"تسجيل الدخول للمنصة"}</p>
+   ${mode==="up"?`<input id="nxN" placeholder="الاسم" style="direction:rtl;text-align:right">`:""}<input id="nxE" type="email" placeholder="email@company.com" autocomplete="username"><input id="nxP" type="password" placeholder="password" autocomplete="${mode==="up"?"new-password":"current-password"}">
+   <button id="nxGo">${mode==="up"?"إنشاء الحساب":"دخول"}</button><button class="l" id="nxSw">${mode==="up"?"عندي حساب — دخول":"أول مرة؟ إنشاء حساب"}</button>${mode==="in"?`<button class="l" id="nxFg">نسيت كلمة المرور</button>`:""}<div class="m" id="nxM">${esc(msg||"")}</div>`);
+  const M=t=>{g.querySelector("#nxM").textContent=t};
+  g.querySelector("#nxSw").onclick=()=>showLogin("",mode==="up"?"in":"up");
+  const fg=g.querySelector("#nxFg");if(fg)fg.onclick=async()=>{const e=g.querySelector("#nxE").value.trim();if(!e)return M("اكتب الإيميل الأول");const {error}=await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname});M(error?error.message:"اتبعت رابط تغيير كلمة المرور على إيميلك")};
+  g.querySelector("#nxGo").onclick=async()=>{const e=g.querySelector("#nxE").value.trim(),p=g.querySelector("#nxP").value;if(!e||!p)return M("اكتب الإيميل وكلمة المرور");M("…");
+    if(mode==="up"){const n=(g.querySelector("#nxN").value||"").trim();const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{name:n},emailRedirectTo:location.origin+location.pathname}});
+      if(error)return M(error.message);if(!data.session){g.querySelector("#nxM").className="m ok";return M("اتبعت رسالة تأكيد على إيميلك — افتحها وبعدين ادخل")}}
+    else{const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error)return M(/Invalid/i.test(error.message)?"الإيميل أو كلمة المرور غلط":/confirm/i.test(error.message)?"لازم تأكد إيميلك الأول من الرسالة اللي وصلتك":error.message)}};
+  g.querySelectorAll("input").forEach(i=>i.addEventListener("keydown",ev=>{if(ev.key==="Enter")g.querySelector("#nxGo").click()}))}
+function showPending(){gate(`<h2>NHCI Tower</h2><p>حسابك (${esc(ME.email)}) مستني موافقة مدير المنصة.</p><p>أول ما يوافق، افتح البرنامج تاني.</p><button id="nxR">تحديث</button><button class="l" id="nxO">تسجيل خروج</button>`);
+  document.getElementById("nxR").onclick=()=>location.reload();document.getElementById("nxO").onclick=async()=>{await sb.auth.signOut();location.reload()}}
+async function afterAuth(session){ME=session.user;const {data}=await sb.from("members").select("*").eq("user_id",ME.id).maybeSingle();MEM=data;ROLE=(data&&data.role)||"pending";
+  if(!["view","interact","admin"].includes(ROLE)){showPending();return}gateClose();await loadPeople();readyRes(true)}
+async function boot(){try{await loadLib()}catch(e){gate(`<h2>NHCI Tower</h2><p>مفيش اتصال بالإنترنت.</p><button onclick="location.reload()">إعادة المحاولة</button>`);return}
+  sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  let done=false;sb.auth.onAuthStateChange((ev,session)=>{if(ev==="PASSWORD_RECOVERY"){const g=gate(`<h2>كلمة مرور جديدة</h2><input id="nxP" type="password" placeholder="new password"><button id="nxGo">حفظ</button><div class="m" id="nxM"></div>`);g.querySelector("#nxGo").onclick=async()=>{const {error}=await sb.auth.updateUser({password:g.querySelector("#nxP").value});if(error)g.querySelector("#nxM").textContent=error.message;else location.reload()};return}
+    if(session&&!done){done=true;afterAuth(session)}else if(!session&&ev==="SIGNED_OUT")location.reload()});
+  const {data}=await sb.auth.getSession();if(data.session){if(!done){done=true;afterAuth(data.session)}}else showLogin()}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+
+/* ---------- people / user ---------- */
+let PEOPLE={},MEMBERS=[];
+async function loadPeople(){try{const [a,b]=await Promise.all([sb.from("people").select("*"),sb.from("members").select("user_id,email,name,role,legacy_id")]);PEOPLE={};(a.data||[]).forEach(p=>PEOPLE[p.id]=p);MEMBERS=b.data||[];
+  MEMBERS.forEach(m=>{const id=m.legacy_id||m.user_id;PEOPLE[id]=Object.assign({},PEOPLE[id]||{},{id,name:m.name||(PEOPLE[id]||{}).name,email:m.email})})}catch(e){}}
+const myId=()=>(MEM&&MEM.legacy_id)||(ME&&ME.id)||null;
+function color(id){let h=0;for(const c of String(id||""))h=(h*31+c.charCodeAt(0))>>>0;return `hsl(${h%360} 55% 42%)`}
+function avatar(name,id){const t=(String(name||"?").trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2)||"?");const c=color(id);
+  return "data:image/svg+xml;utf8,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" rx="32" fill="${c}"/><text x="32" y="41" font-size="26" text-anchor="middle" fill="#fff" font-family="Arial">${esc(t)}</text></svg>`)}
+function prof(id){const p=PEOPLE[id]||{};const name=p.name||"";return {id,name,email:p.email||null,avatarUrl:avatar(name,id),color:color(id),isMe:id===myId(),guest:false}}
+const USER={isOwner:async()=>ROLE==="admin",canEdit:async()=>ROLE==="admin",can:async n=>n==="data.write"?["interact","admin"].includes(ROLE):n==="files.write"||n==="assets.write"?ROLE==="admin":false,
+  id:async()=>myId(),me:async()=>{const id=myId(),p=prof(id);return {id,name:p.name||(MEM&&MEM.name)||"",avatarUrl:p.avatarUrl,color:p.color,email:ME&&ME.email,isOwner:ROLE==="admin",canEdit:ROLE==="admin"}},
+  profiles:async ids=>{ids=typeof ids==="string"?[ids]:[...new Set(ids||[])];if(ids.some(i=>!PEOPLE[i]))await loadPeople();const o={};ids.forEach(i=>o[i]=prof(i));return o},
+  name:async()=>(MEM&&MEM.name)||"",avatarUrl:async()=>prof(myId()).avatarUrl,email:async()=>ME&&ME.email,
+  search:async q=>{q=String(q||"").toLowerCase();return Object.values(PEOPLE).filter(p=>p.name&&(!q||(p.name+" "+(p.email||"")).toLowerCase().includes(q))).slice(0,8).map(p=>prof(p.id))}};
+
+/* ---------- db ---------- */
+const segs=p=>String(p).split("/").filter(Boolean);
+const meta=(c,p)=>({fromCache:!!c,hasPendingWrites:!!p});
+const snapDoc=(path,data,cache)=>({id:segs(path).pop(),exists:data!==undefined&&data!==null,data:()=>data==null?undefined:clone(data),metadata:meta(cache,false),ref:null});
+const CACHE=new Map();/* path -> data */
+const LIST=new Set();/* listeners {kind,path,parent,q,cb} */
+function cmp(a,b){if(a===b)return 0;if(a==null)return 1;if(b==null)return -1;return a<b?-1:1}
+function applyQ(rows,q){let r=rows.filter(x=>q.where.every(([f,op,v])=>{const a=x.data[f];switch(op){case"==":return a===v;case"!=":return a!==v;case"<":return a<v;case"<=":return a<=v;case">":return a>v;case">=":return a>=v;case"in":return (v||[]).includes(a);case"not-in":return !(v||[]).includes(a);case"array-contains":return Array.isArray(a)&&a.includes(v);default:return true}}));
+  if(q.order){const [f,d]=q.order;r.sort((x,y)=>{const c=cmp(x.data[f],y.data[f]);return d==="desc"?(x.data[f]==null?1:y.data[f]==null?-1:-c):c})}else r.sort((x,y)=>cmp(x.id,y.id));
+  if(q.limit)r=r.slice(0,q.limit);return r}
+async function fetchCol(parent){const out=[];let from=0;for(;;){const {data,error}=await sb.from("docs").select("path,data").eq("parent",parent).range(from,from+499);if(error)throw err("unavailable",error.message);
+  data.forEach(d=>{CACHE.set(d.path,d.data);out.push({id:segs(d.path).pop(),path:d.path,data:d.data})});if(data.length<500)break;from+=500}return out}
+function qsnap(rows,prev){const docs=rows.map(r=>snapDoc(r.path,r.data));const changes=[];const pm=new Map((prev||[]).map((r,i)=>[r.path,{r,i}]));
+  rows.forEach((r,i)=>{const p=pm.get(r.path);if(!p)changes.push({type:"added",doc:docs[i],oldIndex:-1,newIndex:i});else{if(JSON.stringify(p.r.data)!==JSON.stringify(r.data)||p.i!==i)changes.push({type:"modified",doc:docs[i],oldIndex:p.i,newIndex:i});pm.delete(r.path)}});
+  pm.forEach(({r,i})=>changes.push({type:"removed",doc:snapDoc(r.path,r.data),oldIndex:i,newIndex:-1}));
+  return {docs,size:docs.length,empty:!docs.length,docChanges:()=>changes,metadata:meta(false,false),forEach:f=>docs.forEach(f)}}
+function makeQuery(parent,q){q=q||{where:[],order:null,limit:0};
+  const Q={path:parent,where:(f,op,v)=>makeQuery(parent,{...q,where:q.where.concat([[f,op,v]])}),orderBy:(f,d)=>makeQuery(parent,{...q,order:[f,d||"asc"]}),limit:n=>makeQuery(parent,{...q,limit:n}),
+    get:async()=>{await READY;return qsnap(applyQ(await fetchCol(parent),q))},
+    onSnapshot:(next,onErr)=>{const L={kind:"q",parent,q,cb:next,prev:null,all:null,dead:false,
+        emit:()=>{const rows=applyQ([...L.all.values()],q);const s=qsnap(rows,L.prev);L.prev=rows;if(s.docChanges().length||!L.sent){L.sent=1;next(s)}},
+        patch:(path,data)=>{if(!L.all)return L.run();if(data==null)L.all.delete(path);else L.all.set(path,{id:segs(path).pop(),path,data});L.emit()},
+        run:async()=>{try{const all=await fetchCol(parent);if(L.dead)return;L.all=new Map(all.map(r=>[r.path,r]));L.emit()}catch(e){if(onErr&&e.code!=="unavailable")onErr(e)}}};
+      READY.then(()=>{if(!L.dead){LIST.add(L);L.run();rt()}});return ()=>{L.dead=true;LIST.delete(L)}},
+    doc:id=>makeDoc(parent+"/"+(id||(Date.now().toString(36)+Math.random().toString(36).slice(2,10)))),
+    add:async data=>{const d=makeDoc(parent+"/"+(Date.now().toString(36)+Math.random().toString(36).slice(2,10)));await d.set(data);return d}};return Q}
+function chk(path,even){const s=segs(path);if(!s.length||(s.length%2===0)!==even)throw new TypeError(`bad ${even?"document":"collection"} path (${s.length} segments): ${path}`);return s.join("/")}
+function deepMerge(a,b){const o=Object.assign({},a||{});for(const k in b){const v=b[k];o[k]=(v&&typeof v==="object"&&!Array.isArray(v)&&o[k]&&typeof o[k]==="object"&&!Array.isArray(o[k]))?deepMerge(o[k],v):v}return o}
+async function notify(path,known){const parent=segs(path).slice(0,-1).join("/");const ls=[...LIST].filter(L=>(L.kind==="d"&&L.path===path)||(L.kind==="q"&&L.parent===parent));if(!ls.length)return;
+  let data=known;if(data===undefined){try{const r=await sb.from("docs").select("data").eq("path",path).maybeSingle();data=r.data?r.data.data:null}catch(e){return}}
+  ls.forEach(L=>{if(L.kind==="d")L.run();else L.patch(path,data)})}
+function makeDoc(path){path=chk(path,true);const parent=segs(path).slice(0,-1).join("/");
+  const write=async row=>{await READY;if(!["interact","admin"].includes(ROLE)||(ROLE==="interact"&&!path.startsWith("tasks/")))throw err("invalid_argument","not permitted");
+    const s=JSON.stringify(row);if(s.length>2_000_000)throw err("invalid_argument","document too large");
+    const {error}=await sb.from("docs").upsert({path,parent,data:row,updated_at:new Date().toISOString(),updated_by:ME.id});if(error)throw err(/quota|limit/i.test(error.message)?"quota_exceeded":"invalid_argument",error.message);CACHE.set(path,row);notify(path,row)};
+  return {id:segs(path).pop(),path,
+    get:async()=>{await READY;const {data,error}=await sb.from("docs").select("data").eq("path",path).maybeSingle();if(error)throw err("unavailable",error.message);CACHE.set(path,data?data.data:null);return snapDoc(path,data?data.data:null)},
+    set:async d=>write(clone(d)),
+    update:async d=>{await READY;const {data}=await sb.from("docs").select("data").eq("path",path).maybeSingle();if(!data)throw err("invalid_argument","document does not exist");return write(deepMerge(data.data,clone(d)))},
+    delete:async()=>{await READY;const {error}=await sb.from("docs").delete().eq("path",path);if(error)throw err("invalid_argument",error.message);CACHE.delete(path);notify(path,null)},
+    acquire:async o=>{const s=await makeDoc(path).get();const cur=s.exists?s.data():{};const L=cur.__lease;if(L&&L.until>Date.now()&&L.holder!==o.holder)return {acquired:false,expiresAt:new Date(L.until).toISOString()};
+      const until=Date.now()+Math.min(600000,Math.max(1000,o.ttlMs||30000));await write(Object.assign({},cur,o.data||{},{__lease:{holder:o.holder,until}}));return {acquired:true,version:1,expiresAt:new Date(until).toISOString(),holder:o.holder}},
+    onSnapshot:(next,onErr)=>{const L={kind:"d",path,dead:false,last:undefined,run:async()=>{try{const {data,error}=await sb.from("docs").select("data").eq("path",path).maybeSingle();if(error)throw err("unavailable",error.message);if(L.dead)return;const v=data?data.data:null;const k=JSON.stringify(v);if(k!==L.last){L.last=k;next(snapDoc(path,v))}}catch(e){if(onErr&&e.code!=="unavailable")onErr(e)}}};
+      READY.then(()=>{if(!L.dead){LIST.add(L);L.run();rt()}});return ()=>{L.dead=true;LIST.delete(L)}},
+    collection:p=>makeQuery(chk(path+"/"+p,false))}}
+let RT=null;function rt(){if(RT)return;RT=sb.channel("docs-all").on("postgres_changes",{event:"*",schema:"public",table:"docs"},pl=>{const p=(pl.new&&pl.new.path)||(pl.old&&pl.old.path);if(p)notify(p,pl.eventType==="DELETE"?null:undefined)}).subscribe();
+  setInterval(()=>{if(document.visibilityState==="visible")LIST.forEach(L=>L.run())},30000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")LIST.forEach(L=>L.run())})}
+const DB={doc:p=>makeDoc(p),collection:p=>makeQuery(chk(p,false))};
+
+/* ---------- room (presence + broadcast) ---------- */
+const PEER=Math.random().toString(36).slice(2,12)+Date.now().toString(36).slice(-4);
+let ROOM=null;function room(){if(ROOM)return ROOM;let ch=null,peers=Object.freeze([]),pres={},conn=false;const H={};const PH=new Set();
+  const build=()=>{const st=ch.presenceState();const arr=[];Object.values(st).forEach(list=>list.forEach(m=>arr.push(Object.freeze({peer:m.peer,by:m.by||null,isMe:m.by===myId(),sameTab:m.peer===PEER,kind:"viewer",guest:false,presence:Object.freeze(m.p||{}),updatedAt:Date.now()}))));
+    const old=new Map(peers.map(p=>[p.peer,p]));const nw=new Map(arr.map(p=>[p.peer,p]));peers=Object.freeze(arr);const ch2={peers,joined:arr.filter(p=>!old.has(p.peer)),left:[...old.values()].filter(p=>!nw.has(p.peer)),updated:arr.filter(p=>old.has(p.peer))};PH.forEach(f=>{try{f(ch2)}catch(e){}})};
+  READY.then(()=>{ch=sb.channel("room-lobby",{config:{presence:{key:PEER},broadcast:{self:true}}});ch.on("presence",{event:"sync"},build);
+    ch.on("broadcast",{event:"m"},({payload})=>{const f=H[payload.topic];if(!f)return;const msg={topic:payload.topic,data:payload.data,peer:payload.peer,by:payload.by,isMe:payload.by===myId(),sameTab:payload.peer===PEER,kind:"viewer",guest:false};f.forEach(h=>{try{h(msg)}catch(e){}})});
+    ch.subscribe(s=>{conn=s==="SUBSCRIBED";if(conn)ch.track({peer:PEER,by:myId(),p:pres})})});
+  ROOM={emit:async(topic,data)=>{await READY;if(!conn)return;if(ROLE==="view")throw err("not_permitted","view only");await ch.send({type:"broadcast",event:"m",payload:{topic,data,peer:PEER,by:myId()}})},
+    on:(topic,fn)=>{(H[topic]=H[topic]||new Set()).add(fn);return ()=>H[topic].delete(fn)},
+    presence:async patch=>{for(const k in patch){if(patch[k]===null)delete pres[k];else pres[k]=patch[k]}if(ch&&conn)await ch.track({peer:PEER,by:myId(),p:pres})},
+    peers:()=>peers,onPeers:fn=>{PH.add(fn);queueMicrotask(()=>fn({peers,joined:peers,left:[],updated:[]}));return ()=>PH.delete(fn)},
+    connected:()=>conn,onConnection:fn=>{queueMicrotask(()=>fn(conn));return ()=>{}},join:async()=>{throw err("not_permitted","named rooms not offered")},
+    canSendToClaudeSession:async()=>"off",sendToClaudeSession:async()=>{throw err("claude_unavailable","")}};return ROOM}
+
+/* ---------- AI (sample) via Edge Function ---------- */
+async function callAI(body,signal){await READY;const {data:{session}}=await sb.auth.getSession();
+  const r=await fetch(SB_URL+"/functions/v1/ai",{method:"POST",signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,apikey:SB_KEY},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));if(!r.ok||j.error){const e=j.error||{};throw err(e.code==="no_key"?"unavailable":e.type||e.code||"upstream_error",e.code==="no_key"?"المساعد الذكي لسه ما اتفعّلش — محتاج مفتاح Anthropic":(e.message||"AI error"))}return j}
+const toBlocks=c=>typeof c==="string"?c:(Array.isArray(c)?c:[{type:"text",text:String(c)}]);
+async function sample(messages,opts){opts=opts||{};const tools=(opts.tools||[]);const msgs=(messages||[]).map(m=>({role:m.role==="assistant"?"assistant":"user",content:toBlocks(m.content)}));let text="";
+  for(let turn=0;turn<10;turn++){const res=await callAI({messages:msgs,system:opts.system,max_tokens:opts.maxTokens||2048,tools:tools.map(t=>({name:t.name,description:t.description,input_schema:t.inputSchema||{type:"object",properties:{}}}))},opts.signal);
+    const tx=(res.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");if(tx){text=tx;opts.onText&&opts.onText({text})}
+    const uses=(res.content||[]).filter(b=>b.type==="tool_use");if(!uses.length||res.stop_reason!=="tool_use")break;
+    msgs.push({role:"assistant",content:res.content});const results=[];for(const u of uses){const t=tools.find(x=>x.name===u.name);let out;try{out=t?await t.execute(u.input||{}):{error:"unknown tool"}}catch(e){out={error:String(e&&e.message||e)}}results.push({type:"tool_result",tool_use_id:u.id,content:JSON.stringify(out==null?null:out).slice(0,60000)})}
+    msgs.push({role:"user",content:results})}
+  return {text}}
+sample.limits=async()=>({images:{maxCount:4}});
+sample.json=async(prompt,opts)=>{opts=opts||{};const content=[];(opts.images||[]).forEach(im=>{const s=typeof im==="string"?im:(im.dataUrl||im.url||"");const m=s.match(/^data:(image\/[a-z+]+);base64,(.*)$/);if(m)content.push({type:"image",source:{type:"base64",media_type:m[1],data:m[2]}})});
+  content.push({type:"text",text:String(prompt)+"\n\nأجب بـ JSON صالح فقط بدون أي نص آخر."});const r=await callAI({messages:[{role:"user",content}],max_tokens:4096},opts.signal);
+  const t=(r.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");const m=t.match(/[\[{][\s\S]*[\]}]/);try{return JSON.parse(m?m[0]:t)}catch(e){throw err("upstream_error","bad JSON")}};
+
+/* ---------- tts / dictation / downloads ---------- */
+function tts(){if(!("speechSynthesis" in window))return null;const S=new Set();let on=false;const set=(s,r)=>{on=s!=="idle";S.forEach(f=>f({state:s,reason:r}))};
+  return {speak:text=>new Promise((res,rej)=>{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(text));u.lang=/[؀-ۿ]/.test(text)?"ar-SA":"en-US";const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.startsWith(u.lang.slice(0,2)));if(v)u.voice=v;u.onstart=()=>set("speaking");u.onend=()=>{set("idle");res()};u.onerror=e=>{set("idle");rej(err("upstream_error",e.error))};speechSynthesis.speak(u)}),
+    stop:async()=>{speechSynthesis.cancel();set("idle")},active:()=>on,onState:f=>{S.add(f);return ()=>S.delete(f)}}}
+function dictation(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R)return null;let rec=null,on=false;const P=new Set(),F=new Set(),S=new Set();const st=(s,r)=>{on=s!=="idle";S.forEach(f=>f({state:s,reason:r}))};
+  return {start:(o)=>new Promise((res,rej)=>{try{rec=new R();rec.lang=(o&&o.language)||"ar-SA";rec.continuous=true;rec.interimResults=true;
+      rec.onstart=()=>{st("listening");res()};rec.onerror=e=>{st("idle",e.error==="not-allowed"?"not_granted":e.error);rej(err(e.error==="not-allowed"?"not_granted":"upstream_error",e.error))};rec.onend=()=>st("idle");
+      rec.onresult=e=>{let part="";for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)F.forEach(f=>f({text:r[0].transcript+" "}));else part+=r[0].transcript}P.forEach(f=>f({text:part}))};rec.start()}catch(e){rej(err("upstream_error",String(e)))}}),
+    stop:async()=>{try{rec&&rec.stop()}catch(e){}},active:()=>on,onPartial:f=>{P.add(f);return ()=>P.delete(f)},onFinal:f=>{F.add(f);return ()=>F.delete(f)},onState:f=>{S.add(f);return ()=>S.delete(f)}}}
+const downloads={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]);const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=filename||"file";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}};
+
+/* ---------- window.claude ---------- */
+const MEMO={};
+window.claude={use:async name=>{if(name in MEMO)return MEMO[name];const p=(async()=>{switch(name){
+  case "db":await READY;return DB;case "user":await READY;return USER;case "room":await READY;return room();case "sample":await READY;return sample;
+  case "tts":return tts();case "dictation":return dictation();case "downloads":return downloads;default:return null}})();MEMO[name]=p;return p}};
+window.NHCI_SB={get client(){return sb},get role(){return ROLE},signOut:async()=>{await sb.auth.signOut();location.reload()}};
+
+/* ---------- admin: approve members ---------- */
+window.nhciAdmin=async function(){if(ROLE!=="admin")return;await loadPeople();const {data}=await sb.from("members").select("*").order("created_at");
+  const g=gate(`<h2>أعضاء المنصة</h2><div style="max-height:55vh;overflow:auto">${(data||[]).map(m=>`<div style="display:flex;gap:6px;align-items:center;margin:6px 0"><span style="flex:1">${esc(m.name)}<br><small dir="ltr">${esc(m.email)}</small></span><select data-l="${esc(m.user_id)}" title="ربط بحساب المنصة القديمة"><option value="">— بدون ربط —</option>${Object.values(PEOPLE).filter(p=>/^u_/.test(p.id)).map(p=>`<option value="${esc(p.id)}"${m.legacy_id===p.id?" selected":""}>${esc(p.name||p.id.slice(0,8))}</option>`).join("")}</select><select data-u="${esc(m.user_id)}">${["pending","view","interact","admin"].map(r=>`<option value="${r}"${m.role===r?" selected":""}>${{pending:"في الانتظار",view:"مشاهدة",interact:"عضو",admin:"مدير"}[r]}</option>`).join("")}</select></div>`).join("")}</div><button id="nxX">إغلاق</button><div class="m" id="nxM"></div>`);
+  g.querySelectorAll("select").forEach(s=>s.onchange=async()=>{const {error}=s.dataset.l!==undefined?await sb.from("members").update({legacy_id:s.value||null}).eq("user_id",s.dataset.l):await sb.from("members").update({role:s.value}).eq("user_id",s.dataset.u);g.querySelector("#nxM").textContent=error?error.message:"✓ اتحفظ"});g.querySelector("#nxX").onclick=gateClose};
+})();
+</script>
+<script>
+if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+(async()=>{try{await window.claude.use("db");const sb=window.NHCI_SB.client;
+  const {data,error}=await sb.from("app_secret").select("k").eq("id",1).maybeSingle();if(error||!data)throw new Error(error?error.message:"no key");
+  const kb=Uint8Array.from(atob(data.k),c=>c.charCodeAt(0));const key=await crypto.subtle.importKey("raw",kb,"AES-GCM",false,["decrypt"]);
+  const r=await fetch("app.enc",{cache:"no-cache"});const buf=new Uint8Array(await r.arrayBuffer());
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:buf.slice(0,12)},key,buf.slice(12));let html=new TextDecoder().decode(pt);
+  html=html.replace(/<head([^>]*)>/i,'<head$1><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#2b6ca2"><link rel="apple-touch-icon" href="icon-180.png">');
+  document.open();document.write(html);document.close()}
+ catch(e){const d=document.getElementById("nxLd");if(d)d.innerHTML='<div style="text-align:center">تعذّر فتح المنصة<br><small>'+String(e&&e.message||e).replace(/</g,"&lt;")+'</small><br><button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;border-radius:10px;border:0">إعادة المحاولة</button></div>'}})();
+</script></head><body><div id="nxLd"><div style="text-align:center"><img src="icon-192.png" alt="">NHCI Tower<br><small>…جارٍ التحميل</small></div></div></body></html>
