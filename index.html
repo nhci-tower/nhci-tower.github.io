@@ -1,10 +1,10 @@
 <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>NHCI Tower</title>
-<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#2b6ca2">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0B4332">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="NHCI Tower">
 <link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
-<style>html,body{margin:0;height:100%;background:linear-gradient(135deg,#0b4332,#14a3a0)}#nxLd{position:fixed;inset:0;display:grid;place-items:center;color:#fff;font:22px 'Sakkal Majalla',Tahoma,sans-serif}#nxLd img{width:96px;height:96px;border-radius:22px;display:block;margin:0 auto 14px;box-shadow:0 10px 30px #0004}</style>
+<style>html,body{margin:0;height:100%;background:#0B4332}#nxLd{position:fixed;inset:0;display:grid;place-items:center;color:#fff;font:22px 'Sakkal Majalla',Tahoma,sans-serif}#nxLd img{width:96px;height:96px;border-radius:22px;display:block;margin:0 auto 14px;box-shadow:0 10px 30px #0004}</style>
 <script>/* NHCI Tower standalone runtime: replaces window.claude.use(...) with Supabase + browser APIs */
 (function(){
 const SB_URL="https://abxwjwsuqtniykfijqsx.supabase.co",SB_KEY="sb_publishable_llGdeAAhRyp8NmxY_4oSmA_gHBuIvND";
@@ -16,13 +16,13 @@ const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
 function loadLib(){return new Promise((res,rej)=>{if(window.supabase)return res();const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js";s.onload=res;s.onerror=()=>rej(new Error("lib"));document.head.appendChild(s)})}
 
 /* ---------- login gate ---------- */
-const CSS=`#nxAuth{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:linear-gradient(135deg,#0b4332,#14a3a0);font-family:'Sakkal Majalla','Segoe UI',Tahoma,sans-serif}
+const CSS=`#nxAuth{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:radial-gradient(120% 80% at 100% 100%,#009C6D33,transparent 60%),#0B4332;font-family:'Basis Grotesque Arabic','Sakkal Majalla','Segoe UI',Tahoma,sans-serif}
 #nxAuth .bx{box-sizing:border-box;background:#fff;border-radius:18px;padding:28px 26px;width:min(380px,92vw);box-shadow:0 20px 60px #0005;direction:rtl;text-align:right}
-#nxAuth h2{margin:0 0 4px;font-size:26px;color:#0b4332}#nxAuth p{margin:0 0 14px;color:#555;font-size:16px}
+#nxAuth h2{margin:0 0 4px;font-size:26px;color:#0B4332}#nxAuth .lg{display:block;width:72px;height:72px;border-radius:18px;margin:0 auto 14px}#nxAuth p{margin:0 0 14px;color:#555;font-size:16px}
 #nxAuth input{width:100%;box-sizing:border-box;padding:11px 12px;margin:5px 0;border:1px solid #ccd;border-radius:10px;font-size:16px;direction:ltr;text-align:left}
-#nxAuth button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;background:#14a3a0;color:#fff;font-size:18px;font-weight:700;cursor:pointer}
-#nxAuth button.l{background:none;color:#0b4332;font-weight:400;font-size:15px;padding:6px}#nxAuth .m{min-height:20px;color:#c62828;font-size:15px;margin-top:6px}#nxAuth .ok{color:#0a7d3c}`;
-function gate(html){let g=document.getElementById("nxAuth");if(!g){const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);g=document.createElement("div");g.id="nxAuth";document.body.appendChild(g)}g.innerHTML=`<div class="bx">${html}</div>`;g.querySelectorAll("input[type=password]").forEach(i=>{const w=document.createElement("div");w.style.cssText="position:relative";i.parentNode.insertBefore(w,i);w.appendChild(i);i.style.paddingLeft="46px";const b=document.createElement("button");b.type="button";b.textContent="👁";b.title="إظهار كلمة المرور";b.style.cssText="position:absolute;left:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;margin:0;padding:0;background:none;color:#0b4332;font-size:19px;border:0;cursor:pointer";b.onclick=()=>{const sh=i.type==="password";i.type=sh?"text":"password";b.textContent=sh?"🙈":"👁";b.title=sh?"إخفاء كلمة المرور":"إظهار كلمة المرور"};w.appendChild(b)});return g}
+#nxAuth button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;background:#0B4332;color:#fff;font-size:18px;font-weight:700;cursor:pointer}
+#nxAuth button.l{background:none;color:#0b4332;font-weight:400;font-size:15px;padding:6px}#nxAuth .m{min-height:20px;color:#c62828;font-size:15px;margin-top:6px}#nxAuth .ok{color:#009C6D}#nxAuth input:focus{outline:2px solid #009C6D;border-color:#009C6D}`;
+function gate(html){let g=document.getElementById("nxAuth");if(!g){const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);g=document.createElement("div");g.id="nxAuth";document.body.appendChild(g)}g.innerHTML=`<div class="bx"><img class="lg" src="icon-192.png" alt="">${html}</div>`;g.querySelectorAll("input[type=password]").forEach(i=>{const w=document.createElement("div");w.style.cssText="position:relative";i.parentNode.insertBefore(w,i);w.appendChild(i);i.style.paddingLeft="46px";const b=document.createElement("button");b.type="button";b.textContent="👁";b.title="إظهار كلمة المرور";b.style.cssText="position:absolute;left:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;margin:0;padding:0;background:none;color:#0b4332;font-size:19px;border:0;cursor:pointer";b.onclick=()=>{const sh=i.type==="password";i.type=sh?"text":"password";b.textContent=sh?"🙈":"👁";b.title=sh?"إخفاء كلمة المرور":"إظهار كلمة المرور"};w.appendChild(b)});return g}
 function gateClose(){const g=document.getElementById("nxAuth");if(g)g.remove()}
 function showLogin(msg,mode){mode=mode||"in";
   const g=gate(`<h2>NHCI Tower</h2><p>${mode==="up"?"إنشاء حساب للفريق":"تسجيل الدخول للمنصة"}</p>
@@ -190,7 +190,7 @@ if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWor
   const kb=Uint8Array.from(atob(data.k),c=>c.charCodeAt(0));const key=await crypto.subtle.importKey("raw",kb,"AES-GCM",false,["decrypt"]);
   const r=await fetch("app.enc",{cache:"no-cache"});const buf=new Uint8Array(await r.arrayBuffer());
   const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:buf.slice(0,12)},key,buf.slice(12));let html=new TextDecoder().decode(pt);try{const {data:as}=await sb.from("docs").select("data").eq("parent","app/assets");(as||[]).forEach(r=>{const d=r.data;html=html.split("assets/"+d.name).join("data:"+d.mime+";base64,"+d.b64)})}catch(e){}
-  html=html.replace(/<head([^>]*)>/i,'<head$1><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#2b6ca2"><link rel="apple-touch-icon" href="icon-180.png">');
+  html=html.replace(/<head([^>]*)>/i,'<head$1><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0B4332"><link rel="apple-touch-icon" href="icon-180.png">');
   document.open();document.write(html);document.close()}
  catch(e){const d=document.getElementById("nxLd");if(d)d.innerHTML='<div style="text-align:center">تعذّر فتح المنصة<br><small>'+String(e&&e.message||e).replace(/</g,"&lt;")+'</small><br><button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;border-radius:10px;border:0">إعادة المحاولة</button></div>'}})();
 </script></head><body><div id="nxLd"><div style="text-align:center"><img src="icon-192.png" alt="">NHCI Tower<br><small>…جارٍ التحميل</small></div></div></body></html>
