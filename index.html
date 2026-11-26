@@ -5,6 +5,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="NHCI Tower">
 <link rel="apple-touch-icon" href="https://abxwjwsuqtniykfijqsx.supabase.co/storage/v1/object/public/pub/icons/icon-180.png?v=3"><link rel="icon" href="https://abxwjwsuqtniykfijqsx.supabase.co/storage/v1/object/public/pub/icons/icon-192.png?v=3">
 <style>html,body{margin:0;height:100%;background:#0B4332}#nxLd{position:fixed;inset:0;display:grid;place-items:center;color:#fff;font:22px 'Sakkal Majalla',Tahoma,sans-serif}#nxLd img{width:96px;height:96px;border-radius:22px;display:block;margin:0 auto 14px;box-shadow:0 10px 30px #0004}</style>
+<script src="https://abxwjwsuqtniykfijqsx.supabase.co/storage/v1/object/public/pub/js/nx_auth.js"></script>
 <script>/* NHCI Tower standalone runtime: replaces window.claude.use(...) with Supabase + browser APIs */
 (function(){
 const SB_URL="https://abxwjwsuqtniykfijqsx.supabase.co",SB_KEY="sb_publishable_llGdeAAhRyp8NmxY_4oSmA_gHBuIvND";
@@ -24,7 +25,7 @@ const CSS=`#nxAuth{position:fixed;inset:0;z-index:2147483000;display:grid;place-
 #nxAuth button.l{background:none;color:#0b4332;font-weight:400;font-size:15px;padding:6px}#nxAuth .m{min-height:20px;color:#c62828;font-size:15px;margin-top:6px}#nxAuth .ok{color:#009C6D}#nxAuth input:focus{outline:2px solid #009C6D;border-color:#009C6D}`;
 function gate(html){let g=document.getElementById("nxAuth");if(!g){const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);g=document.createElement("div");g.id="nxAuth";document.body.appendChild(g)}g.innerHTML=`<div class="bx"><img class="lg" src="https://abxwjwsuqtniykfijqsx.supabase.co/storage/v1/object/public/pub/icons/icon-192.png?v=3" alt="">${html}</div>`;g.querySelectorAll("input[type=password]").forEach(i=>{const w=document.createElement("div");w.style.cssText="position:relative";i.parentNode.insertBefore(w,i);w.appendChild(i);i.style.paddingLeft="46px";const b=document.createElement("button");b.type="button";b.textContent="👁";b.title="إظهار كلمة المرور";b.style.cssText="position:absolute;left:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;margin:0;padding:0;background:none;color:#0b4332;font-size:19px;border:0;cursor:pointer";b.onclick=()=>{const sh=i.type==="password";i.type=sh?"text":"password";b.textContent=sh?"🙈":"👁";b.title=sh?"إخفاء كلمة المرور":"إظهار كلمة المرور"};w.appendChild(b)});return g}
 function gateClose(){const g=document.getElementById("nxAuth");if(g)g.remove()}
-function showLogin(msg,mode){mode=mode||"in";
+function showLogin(msg,mode){if(window.nxAuthUI&&window.nxAuthUI.login)return window.nxAuthUI.login(msg,mode);mode=mode||"in";
   const g=gate(`<h2>NHCI Tower</h2><p>${mode==="up"?"إنشاء حساب للفريق":"تسجيل الدخول للمنصة"}</p>
    ${mode==="up"?`<input id="nxN" placeholder="الاسم" style="direction:rtl;text-align:right">`:""}<input id="nxE" type="email" placeholder="email@company.com" autocomplete="username"><input id="nxP" type="password" placeholder="password" autocomplete="${mode==="up"?"new-password":"current-password"}">
    <button id="nxGo">${mode==="up"?"إنشاء الحساب":"دخول"}</button><button class="l" id="nxSw">${mode==="up"?"عندي حساب — دخول":"أول مرة؟ إنشاء حساب"}</button>${mode==="in"?`<button class="l" id="nxFg">نسيت كلمة المرور</button>`:""}<div class="m" id="nxM">${esc(msg||"")}</div>`);
@@ -39,11 +40,11 @@ function showLogin(msg,mode){mode=mode||"in";
 function showPending(){gate(`<h2>NHCI Tower</h2><p>حسابك (${esc(ME.email)}) مستني موافقة مدير المنصة.</p><p>أول ما يوافق، افتح البرنامج تاني.</p><button id="nxR">تحديث</button><button class="l" id="nxO">تسجيل خروج</button>`);
   document.getElementById("nxR").onclick=()=>location.reload();document.getElementById("nxO").onclick=async()=>{await sb.auth.signOut();location.reload()}}
 async function afterAuth(session){ME=session.user;const {data}=await sb.from("members").select("*").eq("user_id",ME.id).maybeSingle();MEM=data;ROLE=(data&&data.role)||"pending";
-  if(!["view","interact","admin"].includes(ROLE)){showPending();return}if(bioOn()&&!sessionStorage.getItem("nxPw")&&!sessionStorage.getItem("nxBioOk")){if(!(await bioLock()))return}gateClose();await loadPeople();readyRes(true);if(sessionStorage.getItem("nxPw"))setTimeout(bioOffer,4000)}
+  if(!["view","interact","admin"].includes(ROLE)){showPending();return}if(window.nxAuthUI?await window.nxAuthUI.needLock():(bioOn()&&!sessionStorage.getItem("nxPw")&&!sessionStorage.getItem("nxBioOk"))){if(!(await bioLock()))return}gateClose();await loadPeople();readyRes(true);if(sessionStorage.getItem("nxPw"))setTimeout(bioOffer,4000)}
 const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 const ub64=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((s.length+3)%4)),c=>c.charCodeAt(0));
 const bioOn=()=>{try{const v=JSON.parse(localStorage.getItem("nxBio")||"null");return v&&ME&&v.u===ME.id?v:null}catch(e){return null}};
-function bioLock(){return new Promise(res=>{const g=gate(`<h2>NHCI Tower</h2><p>افتح المنصة بالبصمة أو الوجه أو نمط القفل</p><button id="nxBo" style="font-size:20px">🔓 فتح المنصة</button><button class="l" id="nxBp">الدخول بكلمة المرور بدلًا من ذلك</button><div class="m" id="nxM"></div>`);
+function bioLock(){if(window.nxAuthUI&&window.nxAuthUI.lock)return window.nxAuthUI.lock();return new Promise(res=>{const g=gate(`<h2>NHCI Tower</h2><p>افتح المنصة بالبصمة أو الوجه أو نمط القفل</p><button id="nxBo" style="font-size:20px">🔓 فتح المنصة</button><button class="l" id="nxBp">الدخول بكلمة المرور بدلًا من ذلك</button><div class="m" id="nxM"></div>`);
   const go=async()=>{const v=bioOn();try{await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:ub64(v.id)}],userVerification:"required",timeout:60000}});sessionStorage.setItem("nxBioOk","1");res(true)}
     catch(e){g.querySelector("#nxM").textContent=/NotAllowed/.test(e&&e.name)?"اتلغى التحقق — جرّب تاني":"تعذّر التحقق: "+(e&&e.message||e)}};
   g.querySelector("#nxBo").onclick=go;g.querySelector("#nxBp").onclick=async()=>{localStorage.removeItem("nxBio");await sb.auth.signOut();location.reload()}})}
@@ -55,6 +56,7 @@ async function bioOffer(){try{if(!window.PublicKeyCredential||bioOn()||localStor
     localStorage.setItem("nxBio",JSON.stringify({u:ME.id,id:b64u(c.rawId)}));sessionStorage.setItem("nxBioOk","1");const m=g.querySelector("#nxM");m.className="m ok";m.textContent="✅ اتفعّل — المرة الجاية افتح بالبصمة أو الوجه";setTimeout(gateClose,1800)}
    catch(e){g.querySelector("#nxM").textContent=/NotAllowed/.test(e&&e.name)?"اتلغى":"تعذّر التفعيل: "+(e&&e.message||e)}}}catch(e){}}
 window.nhciBio={enable:()=>{localStorage.removeItem("nxBioNo");return bioOffer()},disable:()=>{localStorage.removeItem("nxBio");alert("اتلغى الدخول بالبصمة على الجهاز ده")},on:()=>!!bioOn()};
+window.__nxShim={get sb(){return sb},gate,gateClose,bioOn,b64u,ub64,get ME(){return ME},get MEM(){return MEM},get ROLE(){return ROLE}};
 
 async function boot(){try{await loadLib()}catch(e){gate(`<h2>NHCI Tower</h2><p>مفيش اتصال بالإنترنت.</p><button onclick="location.reload()">إعادة المحاولة</button>`);return}
   sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
