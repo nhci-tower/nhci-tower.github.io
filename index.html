@@ -17,7 +17,7 @@ function loadLib(){return new Promise((res,rej)=>{if(window.supabase)return res(
 
 /* ---------- login gate ---------- */
 const CSS=`#nxAuth{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:linear-gradient(135deg,#0b4332,#14a3a0);font-family:'Sakkal Majalla','Segoe UI',Tahoma,sans-serif}
-#nxAuth .bx{background:#fff;border-radius:18px;padding:28px 26px;width:min(380px,92vw);box-shadow:0 20px 60px #0005;direction:rtl;text-align:right}
+#nxAuth .bx{box-sizing:border-box;background:#fff;border-radius:18px;padding:28px 26px;width:min(380px,92vw);box-shadow:0 20px 60px #0005;direction:rtl;text-align:right}
 #nxAuth h2{margin:0 0 4px;font-size:26px;color:#0b4332}#nxAuth p{margin:0 0 14px;color:#555;font-size:16px}
 #nxAuth input{width:100%;box-sizing:border-box;padding:11px 12px;margin:5px 0;border:1px solid #ccd;border-radius:10px;font-size:16px;direction:ltr;text-align:left}
 #nxAuth button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;background:#14a3a0;color:#fff;font-size:18px;font-weight:700;cursor:pointer}
