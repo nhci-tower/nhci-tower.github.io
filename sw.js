@@ -1,13 +1,15 @@
-const C="nhci-v3",D="nhci-data-v1";
+const C="nhci-v4",D="nhci-data-v1",A="nhci-app-v1";
 const SB="abxwjwsuqtniykfijqsx.supabase.co";
 const RPC_OK=/\/rest\/v1\/rpc\/(my_role|my_prefs|ai_key_set)$/;
 self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(["./","index.html","manifest.webmanifest","app.enc"])).then(()=>self.skipWaiting()))});
-self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C&&x!==D).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C&&x!==D&&x!==A).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+const swr=(e,req)=>{const net=fetch(req).then(r=>{if(r&&r.ok){const cp=r.clone();caches.open(A).then(c=>c.put(req,cp))}return r});e.waitUntil(net.catch(()=>{}));return caches.open(A).then(c=>c.match(req,{ignoreVary:true})).then(r=>r||net)};
 const netFirst=(req,cache,key)=>fetch(req).then(r=>{if(r&&r.ok){const cp=r.clone();caches.open(cache).then(c=>c.put(key||req,cp))}return r}).catch(()=>caches.match(key||req,{ignoreVary:true}).then(r=>r||Promise.reject("offline")));
 self.addEventListener("fetch",e=>{const q=e.request,u=new URL(q.url);
   if(q.method==="POST"&&u.host===SB&&RPC_OK.test(u.pathname)){e.respondWith(q.clone().text().then(b=>{const k=new Request(u.href+"?__b="+encodeURIComponent(b));return netFirst(q,D,k)}));return}
   if(q.method!=="GET")return;
   if(u.origin===location.origin){e.respondWith(fetch(q).then(r=>{const cp=r.clone();caches.open(C).then(c=>c.put(q,cp));return r}).catch(()=>caches.match(q).then(r=>r||caches.match("index.html"))));return}
+  if(u.host===SB&&((/^\/rest\/v1\/docs$/.test(u.pathname)&&/parent=eq\.app(%2F|\/)/.test(u.search))||/^\/storage\/v1\/object\/public\/pub\//.test(u.pathname))){e.respondWith(swr(e,q));return}
   if(u.host===SB&&(/^\/rest\/v1\//.test(u.pathname)||/^\/storage\/v1\/object\/public\//.test(u.pathname))){e.respondWith(netFirst(q,D));return}
   if(/cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|unpkg\.com|fonts\.googleapis\.com|fonts\.gstatic\.com/.test(u.host)){e.respondWith(caches.match(q).then(r=>r||fetch(q).then(n=>{const cp=n.clone();caches.open(C).then(c=>c.put(q,cp));return n})))}});
 
