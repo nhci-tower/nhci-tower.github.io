@@ -62,7 +62,7 @@ async function boot(){try{await loadLib()}catch(e){gate(`<h2>NHCI Tower</h2><p>�
   sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   let done=false;sb.auth.onAuthStateChange((ev,session)=>{if(ev==="PASSWORD_RECOVERY"){const g=gate(`<h2>كلمة مرور جديدة</h2><input id="nxP" type="password" placeholder="new password"><button id="nxGo">حفظ</button><div class="m" id="nxM"></div>`);g.querySelector("#nxGo").onclick=async()=>{const {error}=await sb.auth.updateUser({password:g.querySelector("#nxP").value});if(error)g.querySelector("#nxM").textContent=error.message;else location.reload()};return}
     if(session&&!done){done=true;afterAuth(session)}else if(!session&&ev==="SIGNED_OUT")location.reload()});
-  const {data}=await sb.auth.getSession();if(data.session){if(!done){done=true;afterAuth(data.session)}}else showLogin()}
+  let {data}=await sb.auth.getSession();if(!data.session&&!navigator.onLine){try{const k=Object.keys(localStorage).find(x=>/^sb-.*-auth-token$/.test(x));const s0=k&&JSON.parse(localStorage.getItem(k));if(s0&&s0.user)data={session:s0}}catch(e){}}if(data.session){if(!done){done=true;afterAuth(data.session)}}else showLogin()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 
 /* ---------- people / user ---------- */
